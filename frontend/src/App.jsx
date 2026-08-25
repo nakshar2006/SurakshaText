@@ -1,0 +1,226 @@
+import { useState } from 'react'
+import './App.css'
+
+function App() {
+  const [text, setText] = useState('')
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  const analyzeText = async () => {
+    if (text.trim() === '') {
+      setResult({
+        type: 'warning',
+        title: 'No Message',
+        score: 0,
+        threat: 'No Message',
+        reason: 'Please enter a message to analyze.',
+        indicators: []
+      })
+      return
+    }
+
+    setLoading(true)
+    setResult(null)
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: text
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Server error')
+      }
+
+      const data = await response.json()
+
+      let resultType = 'safe'
+
+      if (data.classification === 'DANGEROUS') {
+        resultType = 'danger'
+      } else if (data.classification === 'SUSPICIOUS') {
+        resultType = 'suspicious'
+      }
+
+      setResult({
+        type: resultType,
+        title:
+          data.classification === 'DANGEROUS'
+            ? 'Dangerous Message'
+            : data.classification === 'SUSPICIOUS'
+            ? 'Suspicious Message'
+            : 'Safe Message',
+        score: data.risk_score,
+        threat:
+          data.indicators.length > 0
+            ? data.indicators[0]
+            : 'No Threat Detected',
+        reason: data.recommendation,
+        indicators: data.indicators
+      })
+    } catch (error) {
+      setResult({
+        type: 'warning',
+        title: 'Connection Error',
+        score: 0,
+        threat: 'Backend Unavailable',
+        reason:
+          'Could not connect to the SurakshaText analysis server. Make sure the backend is running.',
+        indicators: []
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="app">
+      <header className="navbar">
+        <div className="logo">
+          Suraksha<span>Text</span>
+        </div>
+
+        <nav>
+          <a href="#home">Home</a>
+          <a href="#about">About</a>
+          <a href="#features">Features</a>
+        </nav>
+
+        <button className="login-btn">Get Started</button>
+      </header>
+
+      <main>
+        <section id="home" className="hero-section">
+          <div className="hero-content">
+            <p className="tagline">AI-POWERED TEXT SAFETY</p>
+
+            <h1>
+              Stay Safe.
+              <br />
+              <span>Stay Surakshit.</span>
+            </h1>
+
+            <p className="hero-description">
+              SurakshaText helps you identify harmful, suspicious, and
+              potentially dangerous messages before they become a threat.
+            </p>
+
+            <div className="hero-buttons">
+              <button className="primary-btn">Analyze Text</button>
+              <button className="secondary-btn">Learn More</button>
+            </div>
+          </div>
+
+          <div className="hero-card">
+            <div className="card-header">
+              <span className="status-dot"></span>
+              Text Analysis
+            </div>
+
+            <div className="message">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Paste or type a message here..."
+              />
+            </div>
+
+            <button className="analyze-btn" onClick={analyzeText}>
+              {loading ? 'Analyzing...' : 'Analyze Message'}
+            </button>
+
+            {result && (
+              <div className={`result ${result.type}`}>
+                <div className="result-top">
+                  <h3>{result.title}</h3>
+                  <span>{result.score}% Risk</span>
+                </div>
+
+                <div className="risk-bar">
+                  <div
+                    className="risk-fill"
+                    style={{ width: `${result.score}%` }}
+                  ></div>
+                </div>
+
+                <div className="threat-type">
+                  <span>Threat Type</span>
+                  <strong>{result.threat}</strong>
+                </div>
+
+                <p>{result.reason}</p>
+
+                {result.indicators.length > 0 && (
+                  <div className="indicators">
+                    <h4>Detected Indicators</h4>
+
+                    <div className="indicator-list">
+                      {result.indicators.map((indicator, index) => (
+                        <span key={index} className="indicator">
+                          {indicator}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section id="features" className="features-section">
+          <p className="section-label">WHY SURAKSHATEXT</p>
+
+          <h2>Protection when you need it.</h2>
+
+          <div className="features">
+            <div className="feature-card">
+              <h3>🔍 Smart Detection</h3>
+              <p>
+                Detect suspicious and potentially harmful text using
+                intelligent analysis.
+              </p>
+            </div>
+
+            <div className="feature-card">
+              <h3>🛡️ Stay Protected</h3>
+              <p>
+                Identify threats before they can cause harm or lead to unsafe
+                decisions.
+              </p>
+            </div>
+
+            <div className="feature-card">
+              <h3>⚡ Fast Analysis</h3>
+              <p>
+                Get quick results so you can make safer decisions in real time.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="about" className="about-section">
+          <p className="section-label">ABOUT SURAKSHATEXT</p>
+
+          <h2>Built for a safer digital world.</h2>
+
+          <p>
+            SurakshaText is designed to make digital communication safer by
+            helping users understand potentially harmful or suspicious text.
+          </p>
+        </section>
+      </main>
+
+      <footer>
+        <p>© 2026 SurakshaText. Stay Safe. Stay Surakshit.</p>
+      </footer>
+    </div>
+  )
+}
+
+export default App
