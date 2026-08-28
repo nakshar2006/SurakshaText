@@ -5,78 +5,103 @@ function App() {
   const [text, setText] = useState('')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [image, setImage] = useState(null)
+  const [extractedText, setExtractedText] = useState('')
 
   const analyzeText = async () => {
-    if (text.trim() === '') {
-      setResult({
-        type: 'warning',
-        title: 'No Message',
-        score: 0,
-        threat: 'No Message',
-        reason: 'Please enter a message to analyze.',
-        indicators: []
-      })
-      return
-    }
-
-    setLoading(true)
-    setResult(null)
-
-    try {
-      const response = await fetch('https://surakshatext-backend.onrender.com/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: text
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Server error')
-      }
-
-      const data = await response.json()
-
-      let resultType = 'safe'
-
-      if (data.classification === 'DANGEROUS') {
-        resultType = 'danger'
-      } else if (data.classification === 'SUSPICIOUS') {
-        resultType = 'suspicious'
-      }
-
-      setResult({
-        type: resultType,
-        title:
-          data.classification === 'DANGEROUS'
-            ? 'Dangerous Message'
-            : data.classification === 'SUSPICIOUS'
-            ? 'Suspicious Message'
-            : 'Safe Message',
-        score: data.risk_score,
-        threat:
-          data.indicators.length > 0
-            ? data.indicators[0]
-            : 'No Threat Detected',
-        reason: data.recommendation,
-        indicators: data.indicators
-      })
-    } catch (error) {
-      setResult({
-        type: 'warning',
-        title: 'Connection Error',
-        score: 0,
-        threat: 'Backend Unavailable',
-        reason:
-          'Could not connect to the SurakshaText analysis server. Make sure the backend is running.',
-        indicators: []
-      })
-    } finally {
-      setLoading(false)
-    }
+  if (text.trim() === '' && !image) {
+    setResult({
+      type: 'warning',
+      title: 'No Message',
+      score: 0,
+      threat: 'No Message',
+      reason: 'Please enter a message or select a screenshot to analyze.',
+      indicators: []
+    })
+    return
   }
+
+  setLoading(true)
+  setResult(null)
+
+  try {
+    let response
+
+    if (image) {
+      const formData = new FormData()
+      formData.append('file', image)
+
+      response = await fetch(
+        'https://surakshatext-backend.onrender.com/analyze-image',
+        {
+          method: 'POST',
+          body: formData
+        }
+      )
+    } else {
+      response = await fetch(
+        'https://surakshatext-backend.onrender.com/analyze',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: text
+          })
+        }
+      )
+    }
+
+    if (!response.ok) {
+      throw new Error('Server error')
+    }
+
+    const data = await response.json()
+
+if (image) {
+  setExtractedText(data.extracted_text || '')
+}
+
+const analysis = image ? data.analysis : data
+    let resultType = 'safe'
+
+    if (analysis.classification === 'DANGEROUS') {
+      resultType = 'danger'
+    } else if (analysis.classification === 'SUSPICIOUS') {
+      resultType = 'suspicious'
+    }
+
+    setResult({
+      type: resultType,
+      title:
+        analysis.classification === 'DANGEROUS'
+          ? 'Dangerous Message'
+          : analysis.classification === 'SUSPICIOUS'
+          ? 'Suspicious Message'
+          : 'Safe Message',
+      score: analysis.risk_score,
+      threat:
+        analysis.indicators.length > 0
+          ? analysis.indicators[0]
+          : 'No Threat Detected',
+      reason: analysis.recommendation,
+      indicators: analysis.indicators
+    })
+  } catch (error) {
+    setResult({
+      type: 'warning',
+      title: 'Connection Error',
+      score: 0,
+      threat: 'Backend Unavailable',
+      reason:
+        'Could not connect to the SurakshaText analysis server. Make sure the backend is running.',
+      indicators: []
+    })
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="app">
@@ -122,13 +147,30 @@ function App() {
               Text Analysis
             </div>
 
-            <div className="message">
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Paste or type a message here..."
-              />
-            </div>
+           <div className="message">
+  <textarea
+    value={text}
+    onChange={(e) => setText(e.target.value)}
+    placeholder="Paste or type a message here..."
+  />
+
+  <div className="image-upload">
+    <label htmlFor="image-input">📷 Analyze Screenshot</label>
+
+    <input
+      id="image-input"
+      type="file"
+      accept="image/*"
+      onChange={(e) => setImage(e.target.files[0])}
+    />
+
+    {image && (
+      <p className="selected-image">
+        Selected: {image.name}
+      </p>
+    )}
+  </div>
+</div>
 
             <button className="analyze-btn" onClick={analyzeText}>
               {loading ? 'Analyzing...' : 'Analyze Message'}
@@ -136,6 +178,12 @@ function App() {
 
             {result && (
               <div className={`result ${result.type}`}>
+              {image && extractedText && (
+  <div className="extracted-text">
+    <h4>Extracted Text</h4>
+    <p>{extractedText}</p>
+  </div>
+)}
                 <div className="result-top">
                   <h3>{result.title}</h3>
                   <span>{result.score}% Risk</span>

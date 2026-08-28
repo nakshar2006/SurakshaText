@@ -1,8 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from rules import analyze_message
+from ocr import extract_text_from_image
+
+from PIL import Image
+import io
 
 
 app = FastAPI(
@@ -15,11 +19,15 @@ app = FastAPI(
 # Allow frontend to communicate with backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://suraksha-text.vercel.app"
-    ],
+   allow_origins=[
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "https://suraksha-text.vercel.app"
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,3 +49,18 @@ def home():
 def analyze(request: MessageRequest):
     result = analyze_message(request.text)
     return result
+
+@app.post("/analyze-image")
+async def analyze_image(file: UploadFile = File(...)):
+    image_bytes = await file.read()
+
+    image = Image.open(io.BytesIO(image_bytes))
+
+    extracted_text = extract_text_from_image(image)
+
+    result = analyze_message(extracted_text)
+
+    return {
+        "extracted_text": extracted_text,
+        "analysis": result
+    }
