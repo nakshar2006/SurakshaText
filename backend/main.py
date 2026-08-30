@@ -2,10 +2,10 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.rules import analyze_message
-from backend.ocr import extract_text_from_image
-from backend.language import detect_language
-from backend.ml_detector import analyze_with_ml
+from rules import analyze_message
+from ocr import extract_text_from_image
+from language import detect_language
+from ml_detector import analyze_with_ml
 
 from PIL import Image
 import io
