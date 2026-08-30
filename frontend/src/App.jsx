@@ -9,8 +9,11 @@ function App() {
   const [extractedText, setExtractedText] = useState('')
   const [language, setLanguage] = useState('')
 
-  const analyzeText = async () => {
-  if (text.trim() === '' && !image) {
+ const analyzeText = async () => {
+  const hasText = text.trim() !== ''
+  const hasImage = image !== null
+
+  if (!hasText && !hasImage) {
     setResult({
       type: 'warning',
       title: 'No Message',
@@ -28,18 +31,8 @@ function App() {
   try {
     let response
 
-    if (image) {
-      const formData = new FormData()
-      formData.append('file', image)
-
-      response = await fetch(
-        'https://surakshatext-backend.onrender.com/analyze-image',
-        {
-          method: 'POST',
-          body: formData
-        }
-      )
-    } else {
+    // If text is present, ALWAYS prioritize text
+    if (hasText) {
       response = await fetch(
         'https://surakshatext-backend.onrender.com/analyze',
         {
@@ -52,6 +45,18 @@ function App() {
           })
         }
       )
+    } else {
+      // Only analyze image when there is no text
+      const formData = new FormData()
+      formData.append('file', image)
+
+      response = await fetch(
+        'https://surakshatext-backend.onrender.com/analyze-image',
+        {
+          method: 'POST',
+          body: formData
+        }
+      )
     }
 
     if (!response.ok) {
@@ -60,12 +65,14 @@ function App() {
 
     const data = await response.json()
 
-if (image) {
-  setExtractedText(data.extracted_text || '')
-}
-setLanguage(data.language || '')
+    if (hasText) {
+      setExtractedText('')
+    } else {
+      setExtractedText(data.extracted_text || '')
+    }
 
-const analysis = image ? data.analysis : data
+    const analysis = hasText ? data : data.analysis
+
     let resultType = 'safe'
 
     if (analysis.classification === 'DANGEROUS') {
@@ -150,11 +157,14 @@ const analysis = image ? data.analysis : data
             </div>
 
            <div className="message">
-  <textarea
-    value={text}
-    onChange={(e) => setText(e.target.value)}
-    placeholder="Paste or type a message here..."
-  />
+<textarea
+  value={text}
+  onChange={(e) => {
+    setText(e.target.value)
+    setExtractedText('')
+  }}
+  placeholder="Paste or type a message here..."
+/>
 
   <div className="image-upload">
     <label htmlFor="image-input">📷 Analyze Screenshot</label>
