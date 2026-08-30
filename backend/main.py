@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from rules import analyze_message
 from ocr import extract_text_from_image
 
+from language import detect_language
+
 from PIL import Image
 import io
 
@@ -47,8 +49,13 @@ def home():
 
 @app.post("/analyze")
 def analyze(request: MessageRequest):
+    language = detect_language(request.text)
     result = analyze_message(request.text)
-    return result
+
+    return {
+        "language": language,
+        **result
+    }
 
 @app.post("/analyze-image")
 async def analyze_image(file: UploadFile = File(...)):
@@ -58,9 +65,11 @@ async def analyze_image(file: UploadFile = File(...)):
 
     extracted_text = extract_text_from_image(image)
 
+    language = detect_language(extracted_text)
     result = analyze_message(extracted_text)
 
     return {
         "extracted_text": extracted_text,
+        "language": language,
         "analysis": result
     }

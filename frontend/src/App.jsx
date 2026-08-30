@@ -7,6 +7,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [image, setImage] = useState(null)
   const [extractedText, setExtractedText] = useState('')
+  const [language, setLanguage] = useState('')
 
   const analyzeText = async () => {
   if (text.trim() === '' && !image) {
@@ -62,6 +63,7 @@ function App() {
 if (image) {
   setExtractedText(data.extracted_text || '')
 }
+setLanguage(data.language || '')
 
 const analysis = image ? data.analysis : data
     let resultType = 'safe'
@@ -182,6 +184,12 @@ const analysis = image ? data.analysis : data
   <div className="extracted-text">
     <h4>Extracted Text</h4>
     <p>{extractedText}</p>
+  </div>
+)}
+{language && (
+  <div className="detected-language">
+    <span>Detected Language</span>
+    <strong>{language}</strong>
   </div>
 )}
                 <div className="result-top">
