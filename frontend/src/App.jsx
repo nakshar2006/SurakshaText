@@ -188,7 +188,7 @@ const analysis = image ? data.analysis : data
 )}
 {language && (
   <div className="detected-language">
-    <span>Detected Language:</span>
+    <span>Detected Language:</span>{' '}
     <strong>{language}</strong>
   </div>
 )}
