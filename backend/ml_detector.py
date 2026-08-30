@@ -1,4 +1,7 @@
-from backend.ml_model import load_model
+try:
+    from .ml_model import load_model
+except ImportError:
+    from ml_model import load_model
 
 
 # Load the trained ML model once when the backend starts
