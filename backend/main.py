@@ -2,14 +2,13 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from rules import analyze_message
-from ocr import extract_text_from_image
-
-from language import detect_language
+from backend.rules import analyze_message
+from backend.ocr import extract_text_from_image
+from backend.language import detect_language
+from backend.ml_detector import analyze_with_ml
 
 from PIL import Image
 import io
-
 
 app = FastAPI(
     title="SurakshaText API",
@@ -49,12 +48,12 @@ def home():
 
 @app.post("/analyze")
 def analyze(request: MessageRequest):
-    language = detect_language(request.text)
     result = analyze_message(request.text)
+    ml_result = analyze_with_ml(request.text)
 
     return {
-        "language": language,
-        **result
+        **result,
+        "ml_analysis": ml_result
     }
 
 @app.post("/analyze-image")
@@ -67,9 +66,11 @@ async def analyze_image(file: UploadFile = File(...)):
 
     language = detect_language(extracted_text)
     result = analyze_message(extracted_text)
+    ml_result = analyze_with_ml(extracted_text)
 
     return {
         "extracted_text": extracted_text,
         "language": language,
-        "analysis": result
+        "analysis": result,
+        "ml_analysis": ml_result
     }
