@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import './App.css'
 
 function App() {
   const [text, setText] = useState('')
-  const [result, setResult] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [image, setImage] = useState(null)
-  const [extractedText, setExtractedText] = useState('')
-  const [language, setLanguage] = useState('')
+const [result, setResult] = useState(null)
+const [loading, setLoading] = useState(false)
+const [image, setImage] = useState(null)
+const [language, setLanguage] = useState('')
+const [extractedText, setExtractedText] = useState('')
+const [mlAnalysis, setMlAnalysis] = useState(null)
+
+const fileInputRef = useRef(null)
 
  const analyzeText = async () => {
   const hasText = text.trim() !== ''
@@ -25,8 +28,9 @@ function App() {
     return
   }
 
-  setLoading(true)
-  setResult(null)
+ setLoading(true)
+setResult(null)
+setMlAnalysis(null)
 
   try {
     let response
@@ -65,21 +69,25 @@ function App() {
 
     const data = await response.json()
 
-    if (hasText) {
-      setExtractedText('')
-    } else {
-      setExtractedText(data.extracted_text || '')
-    }
+if (hasText) {
+  setExtractedText('')
+  setLanguage('')
+} else {
+  setExtractedText(data.extracted_text || '')
+  setLanguage(data.language || '')
+}
 
-    const analysis = hasText ? data : data.analysis
+const analysis = hasText ? data : data.analysis
 
-    let resultType = 'safe'
+setMlAnalysis(analysis.ml_analysis || null)
 
-    if (analysis.classification === 'DANGEROUS') {
-      resultType = 'danger'
-    } else if (analysis.classification === 'SUSPICIOUS') {
-      resultType = 'suspicious'
-    }
+let resultType = 'safe'
+
+if (analysis.classification === 'DANGEROUS') {
+  resultType = 'danger'
+} else if (analysis.classification === 'SUSPICIOUS') {
+  resultType = 'suspicious'
+}
 
     setResult({
       type: resultType,
@@ -159,10 +167,14 @@ function App() {
            <div className="message">
 <textarea
   value={text}
-  onChange={(e) => {
-    setText(e.target.value)
-    setExtractedText('')
-  }}
+ onChange={(e) => {
+  setText(e.target.value)
+  setImage(null)
+  setExtractedText('')
+  setLanguage('')
+  setResult(null)
+  setMlAnalysis(null)
+}}
   placeholder="Paste or type a message here..."
 />
 
@@ -170,11 +182,19 @@ function App() {
     <label htmlFor="image-input">📷 Analyze Screenshot</label>
 
     <input
-      id="image-input"
-      type="file"
-      accept="image/*"
-      onChange={(e) => setImage(e.target.files[0])}
-    />
+  ref={fileInputRef}
+  id="image-input"
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    setImage(e.target.files[0])
+    setText('')
+    setResult(null)
+    setExtractedText('')
+    setLanguage('')
+    setMlAnalysis(null)
+  }}
+/>
 
     {image && (
       <p className="selected-image">
@@ -221,7 +241,23 @@ function App() {
 
                 <p>{result.reason}</p>
 
-                {result.indicators.length > 0 && (
+{mlAnalysis && (
+  <div className="ml-analysis">
+    <h4>ML Analysis</h4>
+
+    <div className="ml-details">
+      <span>Classification</span>
+      <strong>{mlAnalysis.classification}</strong>
+    </div>
+
+    <div className="ml-details">
+      <span>Confidence</span>
+      <strong>{mlAnalysis.confidence}%</strong>
+    </div>
+  </div>
+)}
+
+{result.indicators.length > 0 && (
                   <div className="indicators">
                     <h4>Detected Indicators</h4>
 
