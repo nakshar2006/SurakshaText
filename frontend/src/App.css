@@ -497,3 +497,37 @@ footer {
   font-size: 13px;
   color: #dbe5f2;
 }
+.ml-analysis {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ml-analysis h4 {
+  margin-bottom: 10px;
+}
+
+.ml-details {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ml-details span {
+  opacity: 0.75;
+}
+
+.ml-details strong {
+  font-weight: 600;
+}
+
+.ml-details span {
+  opacity: 0.75;
+}
+
+.ml-details strong {
+  font-weight: 600;
+}

@@ -246,12 +246,12 @@ if (analysis.classification === 'DANGEROUS') {
     <h4>ML Analysis</h4>
 
     <div className="ml-details">
-      <span>Classification</span>
+      <span>Classification:</span>
       <strong>{mlAnalysis.classification}</strong>
     </div>
 
     <div className="ml-details">
-      <span>Confidence</span>
+      <span>Confidence:</span>
       <strong>{mlAnalysis.confidence}%</strong>
     </div>
   </div>
